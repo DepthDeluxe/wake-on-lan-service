@@ -49,10 +49,13 @@ jobs:
           name: run tests
           command: |
             . venv/bin/activate
-            # pip install pytest
+            mkdir -p test-results/pytest
             pip install '.[test]'
-            pytest --junit-xml test-output.xml
+            pytest --junit-xml test-results/pytest/results.xml
 
       - store_artifacts:
-          path: test-output.xml
-          destination: test-output.xml
+          path: test-results
+          destination: test-results
+
+      - store_test_results:
+          path: test-results
