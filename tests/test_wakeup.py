@@ -51,12 +51,12 @@ def test_wakeup_connection_error(monkeypatch, mocked_send_magic_packet):
     except ConnectionError:
         pass
 
-def test_ping_google_dns():
-    assert backend.ping('8.8.8.8', num_pings=1, timeout=5)
-    assert backend.ping('8.8.8.8', num_pings=10, timeout=30)
+@pytest.mark.skip(reason='Cannot run inside CircleCI since container doens\'t have permission to run ping')
+def test_ping_localhost():
+    assert backend.ping('localhost', num_pings=3, timeout=5)
 
     try:
-        backend.ping('8.8.8.8', num_pings=10, timeout=1)
+        backend.ping('localhost', num_pings=100, timeout=5)
         assert False
     except TimeoutError:
         pass

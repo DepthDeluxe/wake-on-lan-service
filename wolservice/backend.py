@@ -53,11 +53,11 @@ def lookup_mac_address(ip_address: str) -> str:
 
 def ping(ip_address: str, num_pings:int=3, timeout:int=15) -> bool:
     # wait for ping
-    process = subprocess.Popen(['ping', '-c', str(num_pings), ip_address])
+    process = subprocess.Popen(['ping', '-c', str(num_pings), ip_address], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     try:
         returncode = process.wait(timeout)
         if returncode != 0:
-            raise ConnectionError(f'Unable to establish connection to host {ip_address}')
+            raise ConnectionError(f'Unable to establish connection to host {ip_address}, stdout={process.stdout.read()}, stderr={process.stderr.read()}')
     except subprocess.TimeoutExpired:
         process.kill()
         raise TimeoutError(f'Unable to wakeup host {ip_address} in time')
