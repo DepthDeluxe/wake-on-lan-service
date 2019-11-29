@@ -7,7 +7,6 @@ COPY extra/* /usr/src/app
 COPY requirements.txt /usr/src/app
 
 RUN ls /usr/src/app
-## RUN pip install --no-cache-dir -r /usr/src/app/requirements.txt
 RUN pip install --no-cache-dir /usr/src/app
 RUN pip install uwsgi
 
