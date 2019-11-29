@@ -1,7 +1,8 @@
 from setuptools import setup, find_packages
 
 test_dependencies = [
-    'pytest >= 5.3.0'
+    'pytest >= 5.3.0',
+    'requests >= 2.22.0'
 ]
 
 setup(

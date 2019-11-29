@@ -32,6 +32,9 @@ def validate_ip(address: str) -> bool:
 # validates mac address
 # example 4e:00:69:38:cd:05
 def validate_mac(address: str) -> bool:
+    if address is None:
+        return False
+
     split = address.split(':')
     if len(split) != 6:
         return False
@@ -48,26 +51,34 @@ def validate_mac(address: str) -> bool:
     return True
 
 
-def lookup_mac_address(ip_address: str) -> str:
-    return getmac.get_mac_address(ip=ip_address)
+class NetworkManager:
+    def get_mac_address(self, name: str) -> str:
+        mac = getmac.get_mac_address(hostname=name)
+        if mac is None:
+            mac = getmac.get_mac_address(ip=name)
 
-def ping(ip_address: str, num_pings:int=3, timeout:int=15) -> bool:
-    # wait for ping
-    process = subprocess.Popen(['ping', '-c', str(num_pings), ip_address], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    try:
-        returncode = process.wait(timeout)
-        if returncode != 0:
-            raise ConnectionError(f'Unable to establish connection to host {ip_address}, stdout={process.stdout.read()}, stderr={process.stderr.read()}')
-    except subprocess.TimeoutExpired:
-        process.kill()
-        raise TimeoutError(f'Unable to wakeup host {ip_address} in time')
+        if mac is None:
+            raise ConnectionError(f"Cannot find device with name {name} on the network, please make sure it is awake.")
 
-    return True
+        return mac
 
-def wakeup_and_wait_for_response(entity, timeout=None):
-    wakeonlan.send_magic_packet(entity.mac_address, ip_address=entity.ip_address)
+    def ping(self, hostname: str, num_pings:int=3, timeout:int=15) -> bool:
+        # wait for ping
+        process = subprocess.Popen(['ping', '-c', str(num_pings), hostname], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        try:
+            returncode = process.wait(timeout)
+            if returncode != 0:
+                raise ConnectionError(f'Unable to establish connection to host {hostname}, stdout={process.stdout.read()}, stderr={process.stderr.read()}')
+        except subprocess.TimeoutExpired:
+            process.kill()
+            raise TimeoutError(f'Unable to wakeup host {hostname} in time')
 
-    if timeout is None:
-        ping(entity.ip_address)
-    else:
-        ping(entity.ip_address, timeout=timeout)
+        return True
+
+    def wakeup(self, hostname: str, mac: str, timeout:int=None) -> None:
+        wakeonlan.send_magic_packet(mac)
+
+        if timeout is None:
+            self.ping(hostname)
+        else:
+            self.ping(hostname, timeout=timeout)

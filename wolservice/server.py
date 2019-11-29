@@ -8,18 +8,16 @@ app = Flask(__name__)
 db = SQLAlchemy(app)
 
 class WolEntity(db.Model):
-    name = db.Column(db.String, primary_key=True)
+    hostname = db.Column(db.String, primary_key=True)
     mac_address = db.Column(db.String)
-    ip_address = db.Column(db.String)
 
     def __repr__(self):
-        return f'WolEntity(name={name},mac_address={mac_address},ip_address={ip_address})'
+        return f'WolEntity(name={name},mac_address={mac_address},hostname={hostname})'
 
     def to_json(self):
         return {
-            'name': self.name,
-            'mac_address': self.mac_address,
-            'ip_address': self.ip_address
+            'hostname': self.hostname,
+            'mac_address': self.mac_address
         }
 
 @app.route('/')
@@ -30,46 +28,72 @@ def list_targets():
 @app.route('/', methods=['POST'])
 def create():
     try:
-        name = request.json['name']
-        # mac_address = request.json['mac_address']
-        ip_address = request.json['ip_address']
+        hostname = request.json['hostname']
     except KeyError as e:
-        return jsonify({'error': e}), 400
+        raise RestException(e, 400)
 
-    mac_address = lookup_mac_address(ip_address)
-    if mac_address is None:
-        return jsonify({'error': 'Unable to find mac address'}), 400
+    network_manager = _get_network_manager();
 
-    if not backend.validate_mac(mac_address) or not backend.validate_ip(ip_address):
-        return jsonify({'error': 'Bad Mac or IP Address'}), 400
+    try:
+        mac_address = network_manager.get_mac_address(hostname)
+    except ConnectionError as e:
+        raise RestException(e, 400)
 
-    record = WolEntity(name=name,mac_address=mac_address,ip_address=ip_address)
+    if not backend.validate_mac(mac_address):
+        raise RestException('Supplied mac addresss is in improper format', 400)
+
+    record = WolEntity(hostname=hostname,mac_address=mac_address)
     try:
         db.session.add(record)
         db.session.commit()
     except IntegrityError:
-        return jsonify({'error': 'A record already exists'}), 403
+        raise ConflictRestException()
 
     return jsonify(record.to_json()), 200
 
-@app.route('/<name>')
-def get_by_name(name):
-    record = db.session.query(WolEntity).get(name)
+@app.route('/<hostname>')
+def get_by_name(hostname):
+    record = db.session.query(WolEntity).get(hostname)
     if record == None:
-        return jsonify({'error': 'Not found'}), 404
+        raise NotFoundRestException()
     else:
         return jsonify(record.to_json()), 200
 
-
-@app.route('/<name>/wakeup')
-def name_wakeup_action(name):
-    record = db.session.query(WolEntity).get(name)
+@app.route('/<hostname>/wakeup')
+def name_wakeup_action(hostname):
+    record = db.session.query(WolEntity).get(hostname)
     if record == None:
-        return jsonify({'error': 'Not found'}), 404
+        raise NotFoundRestException()
 
+    network_manager = _get_network_manager()
     try:
-        backup.wakeup_and_wait_for_response(record)
-    except Exception:
-        return jsonify({'error': 'Unable to wakeup host'}), 500
+        network_manager.wakeup(hostname, record.mac_address)
+    except Exception as e:
+        raise RestException(e, 500)
 
     return jsonify({'status': 'Successful!'}), 200
+
+def _get_network_manager() -> backend.NetworkManager:
+    return app.config['NETWORK_MANAGER']
+
+
+class RestException(Exception):
+    def __init__(self, message, code):
+        self.message = message
+        self.code = code
+
+class ConflictRestException(RestException):
+    def __init__(self):
+        super().__init__('Conflict', 409)
+
+class NotFoundRestException(RestException):
+    def __init__(self):
+        super().__init__('Not Found', 404)
+
+# @app.errorhandler(Exception)
+# def handle_general_exception(error):
+    # return jsonify({'error': f'Hit uncaught exception: {error}'}, 500)
+
+@app.errorhandler(RestException)
+def handle_rest_exception(error):
+    return jsonify({'error': str(error.message)}), error.code
