@@ -74,5 +74,12 @@ def test_wakeup_failure(client, network_manager):
     assert response.status_code == 500
     assert to_json(response)['error'] == 'MY_ERROR'
 
+def test_delete(client):
+    response = client.delete('/router.localhost.com')
+    assert response.status_code == 200
+
+    response = client.get('/router.localhost.com')
+    assert response.status_code == 404
+
 def to_json(response):
     return json.loads(response.data.decode('utf-8'))

@@ -53,17 +53,20 @@ def create():
 
 @app.route('/<hostname>')
 def get_by_name(hostname):
-    record = db.session.query(WolEntity).get(hostname)
-    if record == None:
-        raise NotFoundRestException()
-    else:
-        return jsonify(record.to_json()), 200
+    record = get_or_throw_if_missing(hostname)
+    return jsonify(record.to_json()), 200
+
+@app.route('/<hostname>', methods=['DELETE'])
+def delete_by_name(hostname):
+    record = get_or_throw_if_missing(hostname)
+    db.session.delete(record)
+    db.session.commit()
+
+    return jsonify(record.to_json()), 200
 
 @app.route('/<hostname>/wakeup')
 def name_wakeup_action(hostname):
-    record = db.session.query(WolEntity).get(hostname)
-    if record == None:
-        raise NotFoundRestException()
+    record = get_or_throw_if_missing(hostname)
 
     network_manager = _get_network_manager()
     try:
@@ -72,6 +75,13 @@ def name_wakeup_action(hostname):
         raise RestException(e, 500)
 
     return jsonify({'status': 'Successful!'}), 200
+
+def get_or_throw_if_missing(hostname):
+    record = db.session.query(WolEntity).get(hostname)
+    if record == None:
+        raise NotFoundRestException()
+
+    return record
 
 def _get_network_manager() -> backend.NetworkManager:
     return app.config['NETWORK_MANAGER']
