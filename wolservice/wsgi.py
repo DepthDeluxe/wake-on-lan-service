@@ -1,7 +1,25 @@
 import os
+from logging.config import dictConfig
+
+dictConfig({
+    'version': 1,
+    'formatters': {'default': {
+        'format': '[%(asctime)s] %(levelname)s in %(module)s: %(message)s',
+    }},
+    'handlers': {'wsgi': {
+        'class': 'logging.StreamHandler',
+        'stream': 'ext://flask.logging.wsgi_errors_stream',
+        'formatter': 'default'
+    }},
+    'root': {
+        'level': 'INFO',
+        'handlers': ['wsgi']
+    }
+})
 
 from wolservice.server import app, db
 from wolservice.backend import parse_config_file, NetworkManager
+    
 
 config = parse_config_file(os.environ.get('WOL_SERVICE_CONFIG', 'config.ini'))
 app.config['NETWORK_MANAGER'] = NetworkManager()

@@ -29,6 +29,7 @@ def list_targets():
 def create():
     try:
         hostname = request.json['hostname']
+        app.logger.info(f'hostname is {hostname}')
     except KeyError as e:
         raise RestException(e, 400)
 
@@ -36,7 +37,9 @@ def create():
 
     try:
         mac_address = network_manager.get_mac_address(hostname)
+        app.logger.info(f'found mac addres {mac_address}')
     except ConnectionError as e:
+        app.logger.error('Unable to get mac address for hostname')
         raise RestException(e, 400)
 
     if not backend.validate_mac(mac_address):
@@ -100,10 +103,10 @@ class NotFoundRestException(RestException):
     def __init__(self):
         super().__init__('Not Found', 404)
 
-# @app.errorhandler(Exception)
-# def handle_general_exception(error):
-    # return jsonify({'error': f'Hit uncaught exception: {error}'}, 500)
-
 @app.errorhandler(RestException)
 def handle_rest_exception(error):
     return jsonify({'error': str(error.message)}), error.code
+
+@app.errorhandler(Exception)
+def handle_general_exception(error):
+    return jsonify({'error': f'Hit uncaught exception: {error}'}, 500)
