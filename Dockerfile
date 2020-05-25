@@ -1,14 +1,13 @@
 FROM python:3.8
 
-RUN mkdir /usr/src/app
-COPY wolservice /usr/src/app/wolservice
-COPY setup.py /usr/src/app
-COPY extra/* /usr/src/app
-COPY requirements.txt /usr/src/app
+RUN mkdir /root/app
+COPY wolservice /root/app/wolservice
+COPY setup.py /root/app
+COPY extra/* /root/app
+COPY requirements.txt /root/app
 
-RUN ls /usr/src/app
-RUN pip install --no-cache-dir /usr/src/app
+RUN pip install --no-cache-dir /root/app
 RUN pip install uwsgi
 
 EXPOSE 8080
-CMD ["/bin/bash", "-c", "cd /usr/src/app && uwsgi --ini config.ini"]
+CMD ["/bin/bash", "-c", "cd /root/app && uwsgi --ini config.ini"]
