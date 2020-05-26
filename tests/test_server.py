@@ -7,7 +7,8 @@ import json
 import pytest
 
 from wolservice.network import NetworkManager
-from wolservice.server import app, db, WolEntity
+from wolservice.app import app
+from wolservice.models import db, WolEntity
 
 @pytest.fixture
 def network_manager():

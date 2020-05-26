@@ -1,5 +1,11 @@
 import os
+import logging
 from logging.config import dictConfig
+
+from wolservice.app import app
+from wolservice.network import NetworkManager
+from wolservice.config import parse_config_file, load_default_configuration, load_config_from_file
+from wolservice.models import db
 
 dictConfig({
     'version': 1,
@@ -15,16 +21,8 @@ dictConfig({
         'level': 'INFO',
     }
 })
-
-from wolservice.server import app, db
-from wolservice.network import NetworkManager
-from wolservice.config import parse_config_file
-
-config = parse_config_file(os.environ.get('WOL_SERVICE_CONFIG', 'config.ini'))
-app.config['NETWORK_MANAGER'] = NetworkManager()
-app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{config.database_path}'
-
-db.metadata.create_all(db.engine)
+logger = logging.getLogger(__name__)
 
 if __name__ == '__main__':
-    app.run()
+    db.metadata.create_all(db.engine)
+    app.run(debug=True)
