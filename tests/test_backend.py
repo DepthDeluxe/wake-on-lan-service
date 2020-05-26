@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import pytest
 import getmac
 
-from wolservice.backend import validate_mac, validate_ip, NetworkManager
+from wolservice.network import validate_mac, validate_ip, NetworkManager
 
 def test_ip():
     assert validate_ip('1.2.3.4') == True

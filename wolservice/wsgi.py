@@ -17,8 +17,8 @@ dictConfig({
 })
 
 from wolservice.server import app, db
-from wolservice.backend import parse_config_file, NetworkManager
-    
+from wolservice.network import NetworkManager
+from wolservice.config import parse_config_file
 
 config = parse_config_file(os.environ.get('WOL_SERVICE_CONFIG', 'config.ini'))
 app.config['NETWORK_MANAGER'] = NetworkManager()

@@ -7,7 +7,7 @@ test_dependencies = [
 
 setup(
     name='wol-service',
-    version='0.0.1',
+    version='0.1.0',
     packages=find_packages(),
     install_requires=[
         'flask >= 1.1.1',
