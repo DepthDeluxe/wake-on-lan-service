@@ -23,16 +23,12 @@ class WolEntity(db.Model):
 @app.route('/')
 def list_targets():
     items = db.session.query(WolEntity).all()
+    app.logger.info(f'Returning information on all {len(items)} elements')
     return jsonify([item.to_json() for item in items])
 
-@app.route('/', methods=['POST'])
-def create():
-    try:
-        hostname = request.json['hostname']
-        app.logger.info(f'hostname is {hostname}')
-    except KeyError as e:
-        raise RestException(e, 400)
-
+@app.route('/<hostname>', methods=['PUT'])
+def update(hostname):
+    app.logger.info(f'hostname is {hostname}')
     network_manager = _get_network_manager();
 
     try:
@@ -44,6 +40,10 @@ def create():
 
     if not backend.validate_mac(mac_address):
         raise RestException('Supplied mac addresss is in improper format', 400)
+
+    record = db.session.query(WolEntity).get(hostname)
+    if record is not None:
+        raise RestException('Conflict', 409)
 
     record = WolEntity(hostname=hostname,mac_address=mac_address)
     try:

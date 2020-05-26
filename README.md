@@ -17,11 +17,8 @@ This service will make it easy to wake computers over distant network connection
 In powershell, run the following command.  This will only work if the host `<your host>` is active on the network and registered in DNS.
 
 ```powershell
-curl --header "Content-Type: application/json" -XPOST --data `@data.json  http://localhost:5000
+curl -XPUT 'http://localhost:5000/<your hostname>'
 ```
-**data.json:**
-```json
-{
-    "hostname": "<your host>"
-}
-```
+
+## Dockerfile
+This project is set to build a Docker version as well.  By default, it uses the config file located in `extra/config.ini`.

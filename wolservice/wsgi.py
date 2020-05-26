@@ -13,7 +13,6 @@ dictConfig({
     }},
     'root': {
         'level': 'INFO',
-        'handlers': ['wsgi']
     }
 })
 
